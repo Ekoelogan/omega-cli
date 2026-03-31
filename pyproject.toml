@@ -4,9 +4,31 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omega-cli"
-version = "1.7.0"
-description = "OSINT and passive recon toolkit"
-requires-python = ">=3.9"
+version = "1.8.0"
+description = "108-command OSINT & passive recon toolkit for analysts, red teamers, and threat hunters"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Ekoelogan", email = "Ekoelogan@users.noreply.github.com"}
+]
+keywords = ["osint", "recon", "security", "penetration-testing", "threat-intelligence", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Internet",
+    "Topic :: System :: Networking :: Monitoring",
+]
 dependencies = [
     "click>=8.0",
     "rich>=13.0",
@@ -24,6 +46,12 @@ dependencies = [
     "schedule>=1.2",
     "openai>=1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Ekoelogan/omega-cli"
+Repository = "https://github.com/Ekoelogan/omega-cli"
+"Bug Tracker" = "https://github.com/Ekoelogan/omega-cli/issues"
+Changelog = "https://github.com/Ekoelogan/omega-cli/releases"
 
 [project.scripts]
 omega = "omega_cli.main:cli"

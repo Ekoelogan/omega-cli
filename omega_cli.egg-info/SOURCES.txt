@@ -1,3 +1,5 @@
+LICENSE
+README.md
 pyproject.toml
 omega_cli/__init__.py
 omega_cli/config.py
@@ -12,11 +14,13 @@ omega_cli.egg-info/top_level.txt
 omega_cli/modules/__init__.py
 omega_cli/modules/ai_analyst.py
 omega_cli/modules/aiassist.py
+omega_cli/modules/aisummary.py
 omega_cli/modules/apiosint.py
 omega_cli/modules/apiserver.py
 omega_cli/modules/archive.py
 omega_cli/modules/asnrecon.py
 omega_cli/modules/assetmap.py
+omega_cli/modules/attackmap.py
 omega_cli/modules/autocorr.py
 omega_cli/modules/autorecon.py
 omega_cli/modules/breachcheck.py
@@ -35,11 +39,13 @@ omega_cli/modules/crtsh.py
 omega_cli/modules/crypto.py
 omega_cli/modules/cryptoosint.py
 omega_cli/modules/cvemap.py
+omega_cli/modules/cvssrank.py
 omega_cli/modules/dark.py
 omega_cli/modules/dashboard.py
 omega_cli/modules/deception.py
 omega_cli/modules/deepweb.py
 omega_cli/modules/dns_lookup.py
+omega_cli/modules/dnsbrute.py
 omega_cli/modules/docosint.py
 omega_cli/modules/dorks.py
 omega_cli/modules/dossier.py
@@ -75,6 +81,7 @@ omega_cli/modules/nvd_cve.py
 omega_cli/modules/opsec.py
 omega_cli/modules/org.py
 omega_cli/modules/osintdb.py
+omega_cli/modules/pastewatch.py
 omega_cli/modules/pdfreport.py
 omega_cli/modules/persona.py
 omega_cli/modules/phishcheck.py
@@ -107,6 +114,7 @@ omega_cli/modules/threatfeed.py
 omega_cli/modules/threatintel.py
 omega_cli/modules/timeline.py
 omega_cli/modules/timeline3d.py
+omega_cli/modules/torcheck.py
 omega_cli/modules/typosquat.py
 omega_cli/modules/username.py
 omega_cli/modules/viz.py

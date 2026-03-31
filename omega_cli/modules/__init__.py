@@ -17,6 +17,7 @@ from . import finance, deepweb, osintdb, stix, firmware, timeline3d
 from . import riskcore, exfil, persona, cloud2, codetrace, threatfeed
 from . import phoneosint, imgosint, docosint, autocorr, briefing, vuln2
 from . import webcrawl, ipdossier, apiosint, socmint, cryptoosint, reportgen
+from . import aisummary, attackmap, dnsbrute, pastewatch, torcheck, cvssrank
 
 __all__ = [
     "whois_lookup", "dns_lookup", "subdomain", "ipinfo",
@@ -37,4 +38,5 @@ __all__ = [
     "riskcore", "exfil", "persona", "cloud2", "codetrace", "threatfeed",
     "phoneosint", "imgosint", "docosint", "autocorr", "briefing", "vuln2",
     "webcrawl", "ipdossier", "apiosint", "socmint", "cryptoosint", "reportgen",
+    "aisummary", "attackmap", "dnsbrute", "pastewatch", "torcheck", "cvssrank",
 ]

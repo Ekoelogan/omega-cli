@@ -25,15 +25,15 @@ def print_banner():
         console.print(f"[bold {color}]{line}[/bold {color}]")
     console.print(
         "  [bold #ff85b3]OMEGA-CLI[/bold #ff85b3] "
-        "[dim #cc6688]v1.7.0 — OSINT & Passive Recon Toolkit[/dim #cc6688]"
+        "[dim #cc6688]v1.8.0 — OSINT & Passive Recon Toolkit[/dim #cc6688]"
     )
     console.print()
 
-BANNER = "[bold #ff2d78]OMEGA-CLI[/bold #ff2d78] [dim]v1.7.0[/dim]"
+BANNER = "[bold #ff2d78]OMEGA-CLI[/bold #ff2d78] [dim]v1.8.0[/dim]"
 
 
 @click.group(invoke_without_command=True)
-@click.version_option("1.7.0", prog_name="omega")
+@click.version_option("1.8.0", prog_name="omega")
 @click.pass_context
 def cli(ctx):
     """omega — OSINT and passive recon toolkit."""
@@ -1342,6 +1342,81 @@ def reportgen_cmd(target, hours, fmt, output, open_browser, report_dir):
     """📊  Master report — aggregate ALL omega findings into a professional HTML/Markdown/PDF report."""
     from omega_cli.modules import reportgen as rg
     rg.run(target, report_dir=report_dir, output=output, hours=hours, fmt=fmt, open_browser=open_browser)
+
+
+# ── v1.8.0 — AI Summary + ATT&CK + DNS Brute + PasteWatch + Tor + CVSSRank ──
+
+@cli.command("aisummary")
+@click.argument("target")
+@click.option("--hours",        default=0,        show_default=True, help="Limit to last N hours of reports (0=all)")
+@click.option("--ollama-model", default="llama3",  show_default=True, help="Ollama model name")
+@click.option("--openai-key",   default="",        envvar="OPENAI_API_KEY", help="OpenAI API key fallback")
+@click.option("--report-dir",   default="",        help="Directory of omega JSON reports")
+@click.option("--export",       default="",        help="Export JSON to path")
+def aisummary_cmd(target, hours, ollama_model, openai_key, report_dir, export):
+    """🤖  AI findings summarizer — Ollama (local) or OpenAI to generate threat intel brief from all omega findings."""
+    from omega_cli.modules import aisummary as ai
+    ai.run(target, report_dir=report_dir, hours=hours,
+           openai_key=openai_key, ollama_model=ollama_model, export=export)
+
+
+@cli.command("attackmap")
+@click.argument("target")
+@click.option("--heatmap",    is_flag=True, help="Generate ATT&CK heatmap HTML")
+@click.option("--report-dir", default="",  help="Directory of omega JSON reports")
+@click.option("--export",     default="",  help="Export JSON to path")
+def attackmap_cmd(target, heatmap, report_dir, export):
+    """⚔  MITRE ATT&CK mapper — map omega findings to ATT&CK techniques and tactics."""
+    from omega_cli.modules import attackmap as am
+    am.run(target, report_dir=report_dir, export=export, heatmap=heatmap)
+
+
+@cli.command("dnsbrute")
+@click.argument("domain")
+@click.option("--wordlist",    default="",  help="Path to custom subdomain wordlist")
+@click.option("--threads",     default=50,  show_default=True, help="Concurrent threads")
+@click.option("--no-axfr",     is_flag=True, help="Skip zone transfer attempt")
+@click.option("--export",      default="",  help="Export JSON to path")
+def dnsbrute_cmd(domain, wordlist, threads, no_axfr, export):
+    """💥  DNS bruteforce — subdomain enum with wildcard detection and zone transfer attempt."""
+    from omega_cli.modules import dnsbrute as db
+    db.run(domain, wordlist_file=wordlist, threads=threads, zone_xfr=not no_axfr, export=export)
+
+
+@cli.command("pastewatch")
+@click.argument("target")
+@click.option("--github-token", default="", envvar="GITHUB_TOKEN", help="GitHub PAT for higher API limits")
+@click.option("--deep",         is_flag=True, help="Fetch pastes and check for sensitive content")
+@click.option("--export",       default="",  help="Export JSON to path")
+def pastewatch_cmd(target, github_token, deep, export):
+    """📋  Paste watcher — search GitHub Gists, pastebin, grep.app for target data leaks."""
+    from omega_cli.modules import pastewatch as pw
+    pw.run(target, github_token=github_token, deep=deep, export=export)
+
+
+@cli.command("torcheck")
+@click.argument("target")
+@click.option("--probe",       is_flag=True, help="Probe .onion via Tor2Web gateways")
+@click.option("--no-relay",    is_flag=True, help="Skip Tor exit node check")
+@click.option("--no-darknet",  is_flag=True, help="Skip Ahmia darknet search")
+@click.option("--export",      default="",   help="Export JSON to path")
+def torcheck_cmd(target, probe, no_relay, no_darknet, export):
+    """🧅  Tor intelligence — exit node check, .onion probe, Onionoo relay lookup, Ahmia darknet search."""
+    from omega_cli.modules import torcheck as tc
+    tc.run(target, check_relay=not no_relay, probe_onion=probe,
+           search_darknet=not no_darknet, export=export)
+
+
+@cli.command("cvssrank")
+@click.argument("cves", default="")
+@click.option("--file",    default="",  help="File containing CVE IDs (one per line or free text)")
+@click.option("--top",     default=0,   show_default=True, help="Show only top N results (0=all)")
+@click.option("--api-key", default="",  envvar="NVD_API_KEY", help="NVD API key (higher rate limit)")
+@click.option("--export",  default="",  help="Export JSON to path")
+def cvssrank_cmd(cves, file, top, api_key, export):
+    """📊  Bulk CVE ranker — rank by CVSS + EPSS exploit probability + CISA KEV for triage prioritization."""
+    from omega_cli.modules import cvssrank as cr
+    cr.run(cves, api_key=api_key, file=file, top=top, export=export)
 
 
 if __name__ == "__main__":

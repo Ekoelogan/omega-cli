@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Smoke Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install omega-cli
+        run: |
+          pip install --upgrade pip
+          pip install .
+
+      - name: Verify install
+        run: |
+          omega --version
+          omega --help
+
+      - name: Smoke test — persona (no network)
+        run: omega persona --count 1
+
+      - name: Smoke test — vuln2 (network)
+        run: omega vuln2 CVE-2021-44228 --no-epss 2>&1 | grep -i "CVE\|CVSS\|log4j" || true
+
+      - name: Smoke test — ipdossier (network)
+        run: omega ipdossier 8.8.8.8 2>&1 | grep -i "PTR\|Risk" || true
