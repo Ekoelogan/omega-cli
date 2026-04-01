@@ -1506,5 +1506,74 @@ def memory_cmd(target, search, clear, show_stats):
     console.print(tbl)
 
 
+@cli.command("chat")
+def chat_cmd():
+    """🤖  Interactive AI chat — ask questions, run tools via natural language."""
+    from omega_cli.agents.manager import AgentManager
+    from omega_cli.config import load
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.formatted_text import HTML
+
+    print_banner()
+    console.print(
+        "[bold #ff2d78]🤖 OMEGA AI Chat[/] — type a question or task. "
+        "[dim]Type 'exit' or Ctrl-D to quit.[/]\n"
+    )
+    console.print("[dim]Examples:[/]")
+    console.print("  [white]> scan tesla.com for web vulnerabilities[/]")
+    console.print("  [white]> find subdomains for example.com[/]")
+    console.print("  [white]> list agents[/]\n")
+
+    mgr = AgentManager(config=load())
+    session = PromptSession()
+
+    while True:
+        try:
+            user_input = session.prompt(
+                HTML("<style fg='#ff2d78' bold='true'>omega</style>"
+                     "<style fg='#484f58'> ❯ </style>"),
+            ).strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim]Goodbye.[/]")
+            break
+
+        if not user_input:
+            continue
+        if user_input.lower() in ("exit", "quit", "q"):
+            console.print("[dim]Goodbye.[/]")
+            break
+        if user_input.lower() in ("help", "?"):
+            console.print("[dim]Type a target and task, e.g.:[/]")
+            console.print("  [white]recon example.com[/]")
+            console.print("  [white]scan 192.168.1.0/24[/]")
+            console.print("  [white]list agents[/]")
+            console.print("  [white]exit[/]")
+            continue
+        if user_input.lower() in ("agents", "list agents"):
+            for a in mgr.list_agents():
+                console.print(f"  [bold #ff2d78]{a['name']}[/] — {a['description']}")
+            continue
+
+        # Parse: last token as target, rest as task
+        parts = user_input.split()
+        if len(parts) == 1:
+            target = parts[0]
+            task = "recon"
+        else:
+            # Heuristic: if last part looks like a domain/IP, use it as target
+            last = parts[-1]
+            if "." in last or "/" in last or ":" in last:
+                target = last
+                task = " ".join(parts[:-1])
+            else:
+                target = parts[0]
+                task = " ".join(parts[1:]) if len(parts) > 1 else "recon"
+
+        try:
+            mgr.run_task(task, target)
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/]")
+
+
 if __name__ == "__main__":
     cli()

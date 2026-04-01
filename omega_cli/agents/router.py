@@ -68,10 +68,25 @@ class AgentRouter:
             return ["forensics-agent"]
         if any(kw in task_lower for kw in ["breach", "leaked", "credential", "password"]):
             return ["password-agent"]
+        if any(kw in task_lower for kw in ["exploit", "metasploit", "sqlmap", "payload"]):
+            return ["exploit-agent"]
+        if any(kw in task_lower for kw in ["wifi", "wireless", "wlan", "aircrack"]):
+            return ["wifi-agent"]
+        if any(kw in task_lower for kw in ["reverse", "firmware", "binary", "disassembl"]):
+            return ["reverse-agent"]
+        if any(kw in task_lower for kw in ["post-exploit", "lateral", "pivot", "exfil", "c2"]):
+            return ["post-agent"]
+        if any(kw in task_lower for kw in ["privacy", "opsec", "tor", "anonymi", "darkweb", "dark web"]):
+            return ["privacy-agent"]
+        if any(kw in task_lower for kw in ["crypto", "blockchain", "bitcoin", "ethereum", "stego"]):
+            return ["crypto-agent"]
+        if any(kw in task_lower for kw in ["ai", "machine learning", "ml model", "llm"]):
+            return ["ai-security-agent"]
         if any(kw in task_lower for kw in ["report", "pdf", "summary"]):
             return ["report-agent"]
         if any(kw in task_lower for kw in ["full", "auto", "everything", "complete"]):
-            return ["recon-agent", "web-agent", "cloud-agent", "vuln-agent", "report-agent"]
+            return ["recon-agent", "web-agent", "cloud-agent", "vuln-agent",
+                     "password-agent", "report-agent"]
 
         # Default: recon
         return ["recon-agent"]
@@ -79,33 +94,28 @@ class AgentRouter:
     @classmethod
     def auto_register(cls):
         """Import and register all built-in specialist agents."""
-        try:
-            from omega_cli.agents.specialists.recon_agent import ReconAgent
-            cls.register("recon-agent", ReconAgent)
-        except ImportError:
-            pass
-        try:
-            from omega_cli.agents.specialists.web_agent import WebAgent
-            cls.register("web-agent", WebAgent)
-        except ImportError:
-            pass
-        try:
-            from omega_cli.agents.specialists.vuln_agent import VulnAgent
-            cls.register("vuln-agent", VulnAgent)
-        except ImportError:
-            pass
-        try:
-            from omega_cli.agents.specialists.cloud_agent import CloudAgent
-            cls.register("cloud-agent", CloudAgent)
-        except ImportError:
-            pass
-        try:
-            from omega_cli.agents.specialists.social_agent import SocialAgent
-            cls.register("social-agent", SocialAgent)
-        except ImportError:
-            pass
-        try:
-            from omega_cli.agents.specialists.report_agent import ReportAgent
-            cls.register("report-agent", ReportAgent)
-        except ImportError:
-            pass
+        _agents = [
+            ("recon-agent", "omega_cli.agents.specialists.recon_agent", "ReconAgent"),
+            ("web-agent", "omega_cli.agents.specialists.web_agent", "WebAgent"),
+            ("vuln-agent", "omega_cli.agents.specialists.vuln_agent", "VulnAgent"),
+            ("cloud-agent", "omega_cli.agents.specialists.cloud_agent", "CloudAgent"),
+            ("social-agent", "omega_cli.agents.specialists.social_agent", "SocialAgent"),
+            ("report-agent", "omega_cli.agents.specialists.report_agent", "ReportAgent"),
+            ("exploit-agent", "omega_cli.agents.specialists.exploit_agent", "ExploitAgent"),
+            ("wifi-agent", "omega_cli.agents.specialists.wifi_agent", "WifiAgent"),
+            ("password-agent", "omega_cli.agents.specialists.password_agent", "PasswordAgent"),
+            ("forensics-agent", "omega_cli.agents.specialists.forensics_agent", "ForensicsAgent"),
+            ("reverse-agent", "omega_cli.agents.specialists.reverse_agent", "ReverseAgent"),
+            ("post-agent", "omega_cli.agents.specialists.post_agent", "PostAgent"),
+            ("privacy-agent", "omega_cli.agents.specialists.privacy_agent", "PrivacyAgent"),
+            ("crypto-agent", "omega_cli.agents.specialists.crypto_agent", "CryptoAgent"),
+            ("ai-security-agent", "omega_cli.agents.specialists.ai_security_agent", "AISecurityAgent"),
+        ]
+        for name, module_path, class_name in _agents:
+            try:
+                import importlib
+                mod = importlib.import_module(module_path)
+                agent_cls = getattr(mod, class_name)
+                cls.register(name, agent_cls)
+            except (ImportError, AttributeError):
+                pass

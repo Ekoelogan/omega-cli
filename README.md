@@ -9,13 +9,14 @@
 ██║   ██║██║╚██╔╝██║██╔══╝  ██║   ██║██╔══██║
 ╚██████╔╝██║ ╚═╝ ██║███████╗╚██████╔╝██║  ██║
  ╚═════╝ ╚═╝     ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-  OMEGA-CLI v1.7.0 — OSINT & Passive Recon Toolkit
+  OMEGA-CLI v1.8.0 — OSINT & Passive Recon Toolkit
 ```
 
-[![Version](https://img.shields.io/badge/version-1.7.0-ff2d78?style=flat-square)](https://github.com/Ekoelogan/omega-cli/releases)
+[![Version](https://img.shields.io/badge/version-1.8.0-ff2d78?style=flat-square)](https://github.com/Ekoelogan/omega-cli/releases)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 [![Commands](https://img.shields.io/badge/commands-108-purple?style=flat-square)](https://github.com/Ekoelogan/omega-cli)
+[![Agents](https://img.shields.io/badge/AI%20agents-15-ff85b3?style=flat-square)](https://github.com/Ekoelogan/omega-cli)
 
 ---
 
@@ -155,6 +156,56 @@ omega chain run threat-hunt    --target example.com   # auto → IOC → ATT&CK 
 omega chain run brand-monitor  --target example.com   # typo + phish + breach + social
 omega chain run red-team       --target example.com   # git + wordlist + fuzz + creds
 ```
+
+---
+
+## 🤖 AI Agent Framework
+
+15 specialist AI agents with shared memory, task planning, and autonomous workflows.
+
+### Quick Start
+
+```bash
+omega agents                                    # List all 15 agents
+omega agent recon-agent example.com            # Run single agent
+omega autopilot example.com --task bug-bounty  # Multi-agent workflow
+omega chat                                      # Interactive AI chat mode
+omega memory --stats                            # Query stored findings
+omega memory --search "critical"                # Search findings
+```
+
+### Agent Categories
+
+| Agent | Category | Capabilities |
+|-------|----------|-------------|
+| `recon-agent` | Information Gathering | WHOIS, DNS, subdomains, certs, IP intel, tech fingerprint |
+| `web-agent` | Web Application | Headers, CORS, JS secrets, crawling, spider |
+| `vuln-agent` | Vulnerability | CVE lookup, vuln scanning, risk scoring, port analysis |
+| `cloud-agent` | Cloud Security | S3 buckets, Azure blobs, GCP storage, cloud recon |
+| `social-agent` | Identity & Social | Username search, email OSINT, social profiles |
+| `exploit-agent` | Exploitation | Exploit search, payload generation, red team ops |
+| `wifi-agent` | Wireless | WiFi analysis, AP discovery, signal recon |
+| `password-agent` | Credentials | Wordlist generation, breach checks, credential auditing |
+| `forensics-agent` | Digital Forensics | Document analysis, image metadata, IOC extraction |
+| `reverse-agent` | Reverse Engineering | Firmware analysis, binary inspection, code review |
+| `post-agent` | Post-Exploitation | Exfil detection, C2 analysis, lateral movement |
+| `privacy-agent` | Anonymity & Privacy | Tor checks, OPSEC analysis, dark web presence |
+| `crypto-agent` | Crypto & Stego | Blockchain tracing, cryptocurrency OSINT, stego detection |
+| `ai-security-agent` | AI Security | ML model auditing, AI-assisted threat detection |
+| `report-agent` | Reporting | PDF/HTML reports, executive summaries, timeline views |
+
+### Architecture
+
+```
+User Request → Planner → Router → [Agent1, Agent2, ...] → Shared Memory → Report
+                                        ↓
+                                  Agent handoff (recon→vuln→exploit chain)
+```
+
+- **Shared Memory**: SQLite-backed findings store — any agent can query
+- **Task Planning**: Automatic decomposition of complex tasks
+- **Agent Handoff**: Agents recommend follow-up agents based on findings
+- **Parallel Execution**: Independent agents run concurrently
 
 ---
 
