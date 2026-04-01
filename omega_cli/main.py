@@ -1,47 +1,8 @@
 """omega-cli: OSINT and passive recon toolkit — main entry point."""
-import functools
 import click
 from rich.console import Console
 
 console = Console()
-
-# Global offline state
-_OFFLINE_MODE = False
-
-
-def requires_network(fn):
-    """Decorator that blocks command execution when --offline is active."""
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        if _OFFLINE_MODE:
-            console.print(
-                f"[bold #ff2d78]⚡ OFFLINE MODE[/bold #ff2d78] — "
-                f"[dim]'{fn.__name__}' requires network access. Skipped.[/dim]"
-            )
-            return
-        return fn(*args, **kwargs)
-    return wrapper
-
-
-def allows_ollama(fn):
-    """Decorator for AI commands: allows local Ollama in offline mode, blocks cloud-only."""
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        if _OFFLINE_MODE:
-            provider = kwargs.get("provider", "ollama")
-            if provider != "ollama":
-                console.print(
-                    f"[bold #ff2d78]⚡ OFFLINE MODE[/bold #ff2d78] — "
-                    f"[dim]'{fn.__name__}' with provider '{provider}' requires internet. "
-                    f"Use --provider ollama for local inference.[/dim]"
-                )
-                return
-            console.print(
-                "[bold #ff85b3]⚡ OFFLINE MODE[/bold #ff85b3] — "
-                "[dim]using local Ollama for AI inference[/dim]"
-            )
-        return fn(*args, **kwargs)
-    return wrapper
 
 # Pink gradient colors top → bottom
 _PINK_GRADIENT = [
@@ -73,18 +34,12 @@ BANNER = "[bold #ff2d78]OMEGA-CLI[/bold #ff2d78] [dim]v1.8.0[/dim]"
 
 @click.group(invoke_without_command=True)
 @click.version_option("1.8.0", prog_name="omega")
-@click.option("--offline", is_flag=True, help="Disable all network calls (local-only mode).")
 @click.pass_context
-def cli(ctx, offline):
+def cli(ctx):
     """omega — OSINT and passive recon toolkit."""
-    global _OFFLINE_MODE
-    _OFFLINE_MODE = offline
     ctx.ensure_object(dict)
-    ctx.obj["offline"] = offline
     if ctx.invoked_subcommand is None:
         print_banner()
-        if offline:
-            console.print("  [bold #ff2d78]⚡ OFFLINE MODE[/bold #ff2d78] [dim]— network commands disabled[/dim]\n")
         click.echo(ctx.get_help())
 
 
@@ -92,7 +47,6 @@ def cli(ctx, offline):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def whois(target):
     """WHOIS lookup for a domain or IP."""
     from omega_cli.modules import whois_lookup
@@ -102,7 +56,6 @@ def whois(target):
 @cli.command()
 @click.argument("target")
 @click.option("--type", "record_type", default="ALL", help="Record type or ALL")
-@requires_network
 def dns(target, record_type):
     """DNS record enumeration."""
     from omega_cli.modules import dns_lookup
@@ -112,7 +65,6 @@ def dns(target, record_type):
 @cli.command()
 @click.argument("target")
 @click.option("--wordlist", "-w", default=None, help="Custom subdomain wordlist")
-@requires_network
 def subdomains(target, wordlist):
     """Subdomain enumeration via DNS brute-force."""
     from omega_cli.modules import subdomain
@@ -121,7 +73,6 @@ def subdomains(target, wordlist):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def crtsh(target):
     """Passive subdomain discovery via Certificate Transparency logs."""
     from omega_cli.modules import crtsh as _crtsh
@@ -130,7 +81,6 @@ def crtsh(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def ipinfo(target):
     """IP geolocation, ASN, and RDAP info."""
     from omega_cli.modules import ipinfo as _ipinfo
@@ -139,7 +89,6 @@ def ipinfo(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def email(target):
     """Email OSINT: validation, MX, disposable/breach check."""
     from omega_cli.modules import email_osint
@@ -148,7 +97,6 @@ def email(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def headers(target):
     """HTTP response headers analysis and security audit."""
     from omega_cli.modules import headers as _headers
@@ -157,7 +105,6 @@ def headers(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def ssl(target):
     """SSL/TLS certificate inspection."""
     from omega_cli.modules import ssl_check
@@ -167,7 +114,6 @@ def ssl(target):
 @cli.command()
 @click.argument("target")
 @click.option("--ports", "-p", default="common", help="'common', '80,443', or '1-1024'")
-@requires_network
 def ports(target, ports):
     """TCP port scan (connect scan)."""
     from omega_cli.modules import portscan
@@ -177,7 +123,6 @@ def ports(target, ports):
 @cli.command()
 @click.argument("target")
 @click.option("--dork", "-d", default="all", help="Category or 'all'")
-@requires_network
 def dorks(target, dork):
     """Generate Google dork queries for a target."""
     from omega_cli.modules import dorks as _dorks
@@ -189,7 +134,6 @@ def dorks(target, dork):
 @cli.command()
 @click.argument("target")
 @click.option("--limit", "-l", default=500, show_default=True, help="Max archived URLs")
-@requires_network
 def wayback(target, limit):
     """Wayback Machine — archived URLs and exposed endpoints."""
     from omega_cli.modules import wayback as _wayback
@@ -198,7 +142,6 @@ def wayback(target, limit):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def tech(target):
     """Technology fingerprinting — CMS, frameworks, WAF, analytics."""
     from omega_cli.modules import techfp
@@ -207,7 +150,6 @@ def tech(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def threat(target):
     """Threat intelligence — URLhaus, AbuseIPDB."""
     from omega_cli.modules import threatintel
@@ -216,7 +158,6 @@ def threat(target):
 
 @cli.command()
 @click.argument("username")
-@requires_network
 def user(username):
     """Username OSINT — check handle across 20+ platforms."""
     from omega_cli.modules import username as _username
@@ -227,7 +168,6 @@ def user(username):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def spoof(target):
     """Email spoofing audit — SPF, DKIM, DMARC analysis."""
     from omega_cli.modules import spoofcheck
@@ -236,7 +176,6 @@ def spoof(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def revip(target):
     """Reverse IP — find co-hosted domains on the same server."""
     from omega_cli.modules import reverseip
@@ -245,7 +184,6 @@ def revip(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def js(target):
     """JavaScript scanner — extract endpoints and secrets from JS files."""
     from omega_cli.modules import jscan
@@ -254,7 +192,6 @@ def js(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def robots(target):
     """robots.txt and sitemap.xml content discovery."""
     from omega_cli.modules import crawl
@@ -263,7 +200,6 @@ def robots(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def buckets(target):
     """Cloud bucket finder — open S3, GCS, Azure, DO Spaces."""
     from omega_cli.modules import buckets as _buckets
@@ -272,7 +208,6 @@ def buckets(target):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def cve(target):
     """CVE mapper — match detected technologies to known vulnerabilities."""
     from omega_cli.modules import techfp, cvemap
@@ -286,7 +221,6 @@ def cve(target):
               help="Comma-separated modules to run (default: all)")
 @click.option("--report", "-r", is_flag=True, help="Export HTML + JSON report")
 @click.option("--output", "-o", default=None, help="Report output directory")
-@requires_network
 def scan(target, modules, report, output):
     """⚡ Live TUI dashboard — all modules run in parallel with real-time output."""
     mod_list = [m.strip() for m in modules.split(",")] if modules else None
@@ -300,7 +234,6 @@ def scan(target, modules, report, output):
 @click.argument("target")
 @click.option("--report", "-r", is_flag=True, help="Export HTML + JSON report")
 @click.option("--output", "-o", default=None, help="Report output directory")
-@requires_network
 def recon(target, report, output):
     """Full sequential recon — all modules, verbose output."""
     from omega_cli.modules import recon as _recon
@@ -352,7 +285,6 @@ def banner():
               help="AI provider: ollama (local) or openai")
 @click.option("--model", default="", help="Model name override (e.g. gpt-4o, llama3)")
 @click.option("--scan", is_flag=True, help="Run a quick recon scan first, then analyse")
-@allows_ollama
 def ai(target, provider, model, scan):
     """🤖  AI-powered attack surface analysis (Ollama/OpenAI)."""
     from omega_cli.modules import ai_analyst
@@ -379,7 +311,6 @@ def ai(target, provider, model, scan):
 @cli.command("map")
 @click.argument("target")
 @click.option("--deep", is_flag=True, help="Probe open ports on each discovered IP")
-@requires_network
 def asset_map(target, deep):
     """🗺   Network asset map — domains, subdomains, IPs, ports as a live tree."""
     from omega_cli.modules import assetmap
@@ -446,7 +377,6 @@ def notify(provider, url, target, message, test, tg_token, tg_chat):
 @click.argument("keyword")
 @click.option("--limit", default=10, show_default=True, help="Max results")
 @click.option("--min-score", default=0.0, show_default=True, help="Minimum CVSS score filter")
-@requires_network
 def cve(keyword, limit, min_score):
     """🔍  Real-time CVE lookup from NIST NVD API v2."""
     from omega_cli.modules import nvd_cve
@@ -457,7 +387,6 @@ def cve(keyword, limit, min_score):
 
 
 @cli.command("shell")
-@requires_network
 def omega_shell():
     """💻  Interactive OMEGA REPL with autocomplete and history."""
     from omega_cli.modules import shell_repl
@@ -470,7 +399,6 @@ def omega_shell():
 @click.argument("domain")
 @click.option("--deep", is_flag=True, help="Also search Bing and GitHub for emails")
 @click.option("--github-token", default="", envvar="GITHUB_TOKEN", help="GitHub PAT for higher rate limits")
-@requires_network
 def harvest(domain, deep, github_token):
     """📧  Email harvester — scrape addresses from web, crt.sh, GitHub."""
     from omega_cli.modules import harvester
@@ -482,7 +410,6 @@ def harvest(domain, deep, github_token):
 
 @cli.command()
 @click.argument("target")
-@requires_network
 def asn(target):
     """🌐  ASN / BGP recon — netblocks, prefixes, peers, org info.
 
@@ -496,7 +423,6 @@ def asn(target):
 @click.argument("target")
 @click.option("--deep", is_flag=True, help="Scan file contents for actual secret values")
 @click.option("--token", default="", envvar="GITHUB_TOKEN", help="GitHub PAT")
-@requires_network
 def git(target, deep, token):
     """🐙  GitHub OSINT — repos, exposed secrets, org recon."""
     from omega_cli.modules import gitrecon
@@ -509,7 +435,6 @@ def git(target, deep, token):
 @cli.command()
 @click.argument("target")
 @click.option("--endpoints", is_flag=True, help="Test common API endpoints too")
-@requires_network
 def cors(target, endpoints):
     """🔓  CORS misconfiguration tester — wildcard, reflected origin, credentials bypass."""
     from omega_cli.modules import corscheck
@@ -520,7 +445,6 @@ def cors(target, endpoints):
 @click.argument("domain")
 @click.option("--no-probe", is_flag=True, help="Skip DNS probing, just list permutations")
 @click.option("--limit", default=200, show_default=True, help="Max permutations to check")
-@requires_network
 def typo(domain, no_probe, limit):
     """🎭  Typosquatting detector — lookalike domains, keyboard swaps, homoglyphs."""
     from omega_cli.modules import typosquat
@@ -555,7 +479,6 @@ def pdf(target, output, scan):
 @cli.command()
 @click.argument("target")
 @click.option("--search", is_flag=True, help="Use target as a Shodan search query instead of host")
-@requires_network
 def shodan(target, search):
     """👁  Shodan.io — exposed services, banners, CVEs, open ports."""
     from omega_cli.modules import shodan_lookup
@@ -567,7 +490,6 @@ def shodan(target, search):
 @cli.command()
 @click.argument("target")
 @click.option("--password", is_flag=True, help="Check a password instead of email/domain")
-@requires_network
 def breach(target, password):
     """💀  Data breach checker — HIBP email/domain/password lookup."""
     from omega_cli.modules import breachcheck
@@ -579,7 +501,6 @@ def breach(target, password):
 @cli.command()
 @click.argument("target")
 @click.option("--live", is_flag=True, help="Submit for a live URLScan.io scan (slower)")
-@requires_network
 def phish(target, live):
     """🎣  Phishing detection — URLScan.io, PhishTank, Google Safe Browsing."""
     from omega_cli.modules import phishcheck
@@ -596,7 +517,6 @@ def phish(target, live):
 @cli.command()
 @click.argument("name")
 @click.option("--deep", is_flag=True, help="Show cloud metadata SSRF reference table")
-@requires_network
 def cloud(name, deep):
     """☁   Cloud asset enumeration — S3, GCS, Azure, Firebase, DO Spaces."""
     from omega_cli.modules import cloudrecon
@@ -618,7 +538,6 @@ def wordlist(domain, rules, emails, output):
 @click.argument("target")
 @click.option("--passive", is_flag=True, help="Passive-only mode (no active probing)")
 @click.option("--output-dir", default="", help="Directory for PDF/JSON output")
-@requires_network
 def auto(target, passive, output_dir):
     """⚡  Full automated recon — chains ALL modules, exports PDF + JSON."""
     from omega_cli.modules import autorecon
@@ -630,7 +549,6 @@ def auto(target, passive, output_dir):
 @cli.command()
 @click.argument("action", type=click.Choice(["status", "test", "tor", "clear"]), default="status")
 @click.option("--proxy-url", default="", help="Proxy URL to test (e.g. socks5h://127.0.0.1:9050)")
-@requires_network
 def proxy(action, proxy_url):
     """🕵  Proxy/Tor anonymity — status, test, and configure routing."""
     from omega_cli.modules import proxy as px
@@ -642,7 +560,6 @@ def proxy(action, proxy_url):
 @click.option("--width", default=1280, show_default=True, help="Viewport width")
 @click.option("--no-full-page", is_flag=True, help="Capture viewport only, not full page")
 @click.option("--output-dir", default="", help="Output directory for screenshots")
-@requires_network
 def screenshot(targets, width, no_full_page, output_dir):
     """📸  Headless browser screenshots via Playwright."""
     from omega_cli.modules import screenshot as ss
@@ -665,7 +582,6 @@ def graph(target, json_file):
 @click.option("--extensions", is_flag=True, help="Try common extensions (.php, .bak, etc.)")
 @click.option("--concurrency", default=20, show_default=True, help="Concurrent requests")
 @click.option("--codes", default="200,201,301,302,401,403", show_default=True, help="Status codes to show")
-@requires_network
 def fuzz(target, wordlist_file, extensions, concurrency, codes):
     """💥  Directory/file fuzzer — finds hidden paths and sensitive files."""
     from omega_cli.modules import fuzzer as fz
@@ -677,7 +593,6 @@ def fuzz(target, wordlist_file, extensions, concurrency, codes):
 @click.argument("target")
 @click.option("--deep", is_flag=True, help="Also search GitHub commits")
 @click.option("--token", default="", envvar="GITHUB_TOKEN", help="GitHub PAT")
-@requires_network
 def social(target, deep, token):
     """📱  Social media OSINT — Reddit, HackerNews, Pastebin, Twitter/X."""
     from omega_cli.modules import social as sc
@@ -701,7 +616,6 @@ def timeline(target, json_file):
 @click.argument("query")
 @click.option("--limit", default=20, show_default=True, help="Max results from Ahmia")
 @click.option("--extract", is_flag=True, help="Extract .onion addresses from raw text/URL")
-@requires_network
 def dark(query, limit, extract):
     """🌑  Dark web recon — Ahmia search + .onion address extraction."""
     from omega_cli.modules import dark as dk
@@ -711,7 +625,6 @@ def dark(query, limit, extract):
 @cli.command()
 @click.argument("address")
 @click.option("--eth-key", default="", envvar="ETHERSCAN_API_KEY", help="Etherscan API key")
-@requires_network
 def crypto(address, eth_key):
     """₿   Blockchain OSINT — BTC/ETH address balance, transactions, abuse reports."""
     from omega_cli.modules import crypto as cr
@@ -724,7 +637,6 @@ def crypto(address, eth_key):
 @click.argument("ioc_value")
 @click.option("--vt-key", default="", envvar="VT_API_KEY", help="VirusTotal API key")
 @click.option("--no-mb", is_flag=True, help="Skip MalwareBazaar lookup")
-@requires_network
 def malware(ioc_value, vt_key, no_mb):
     """🦠  Malware / threat analysis — VirusTotal + MalwareBazaar for hashes, URLs, domains."""
     from omega_cli.modules import malware as mw
@@ -747,7 +659,6 @@ def ioc(source, include_private, defang, types):
 @cli.command()
 @click.argument("target")
 @click.option("--image", default="", help="Image file to extract EXIF GPS from")
-@requires_network
 def geoint(target, image):
     """🌍  Geo-intelligence — IP geolocation, EXIF GPS extraction, reverse geocoding."""
     from omega_cli.modules import geoint as gi
@@ -759,7 +670,6 @@ def geoint(target, image):
 @click.option("--otx-key",        default="", envvar="OTX_API_KEY",       help="AlienVault OTX key")
 @click.option("--abuseipdb-key",  default="", envvar="ABUSEIPDB_API_KEY", help="AbuseIPDB key")
 @click.option("--greynoise-key",  default="", envvar="GREYNOISE_API_KEY", help="GreyNoise key")
-@requires_network
 def intel(target, otx_key, abuseipdb_key, greynoise_key):
     """🛡   Threat intel — AlienVault OTX + AbuseIPDB + GreyNoise aggregator."""
     from omega_cli.modules import intel as ti
@@ -778,7 +688,6 @@ def intel(target, otx_key, abuseipdb_key, greynoise_key):
 @click.option("--max-pages",   default=50, show_default=True, help="Max pages to crawl")
 @click.option("--depth",       default=3,  show_default=True, help="Crawl depth")
 @click.option("--concurrency", default=8,  show_default=True, help="Concurrent requests")
-@requires_network
 def spider(target, max_pages, depth, concurrency):
     """🕷  Recursive web spider — pages, links, forms, JS endpoints, secret scan."""
     from omega_cli.modules import spider as sp
@@ -789,7 +698,6 @@ def spider(target, max_pages, depth, concurrency):
 @click.argument("target")
 @click.option("--ports",  default="", help="Ports to probe (default: 50050,8443,8080,443,80)")
 @click.option("--deep",   is_flag=True, help="Cross-check against C2 intel feeds")
-@requires_network
 def c2(target, ports, deep):
     """☠  C2 detection — Cobalt Strike, Sliver, Metasploit fingerprinting + intel feeds."""
     from omega_cli.modules import c2 as c2mod
@@ -801,7 +709,6 @@ def c2(target, ports, deep):
 @click.option("--token",      default="", envvar="GITHUB_TOKEN", help="GitHub PAT")
 @click.option("--no-github",  is_flag=True, help="Skip GitHub search")
 @click.option("--no-paste",   is_flag=True, help="Skip Pastebin search")
-@requires_network
 def creds(target, token, no_github, no_paste):
     """🔐  Credential exposure — GitHub secret scan + Pastebin + leak site search."""
     from omega_cli.modules import creds as cr
@@ -813,7 +720,6 @@ def creds(target, token, no_github, no_paste):
 
 @cli.command()
 @click.argument("target_ip", default="", required=False)
-@requires_network
 def opsec(target_ip):
     """🛡  OpSec audit — anonymity check, DNS leak, Tor status, OPSEC score."""
     from omega_cli.modules import opsec as op
@@ -834,7 +740,6 @@ def hunt(target, json_file, playbook):
 @click.argument("target")
 @click.option("--old", "old_file", default="", help="Older recon JSON file")
 @click.option("--new", "new_file", default="", help="Newer recon JSON file")
-@requires_network
 def compare_cmd(target, old_file, new_file):
     """📊  Recon diff — compare two omega recon runs, surface new/changed/removed findings."""
     from omega_cli.modules import compare as cmp
@@ -848,7 +753,6 @@ def compare_cmd(target, old_file, new_file):
 @click.option("--port",     default=6660,         show_default=True, help="Listen port")
 @click.option("--show-key", is_flag=True,         help="Print API key and exit")
 @click.option("--new-key",  is_flag=True,         help="Rotate to a new API key")
-@requires_network
 def api_server(host, port, show_key, new_key):
     """🌐  REST API server — expose all omega commands over HTTP with API key auth."""
     from omega_cli.modules import apiserver
@@ -860,7 +764,6 @@ def api_server(host, port, show_key, new_key):
 @click.argument("name", default="")
 @click.option("--target",  default="", help="Target to pass into chain steps")
 @click.option("--dry-run", is_flag=True, help="Print steps without executing")
-@requires_network
 def chain_cmd(action, name, target, dry_run):
     """⛓  Workflow pipeline — run named multi-step recon chains (built-in + custom)."""
     from omega_cli.modules import chain as ch
@@ -873,7 +776,6 @@ def chain_cmd(action, name, target, dry_run):
 @click.option("--target",      default="", help="Target to pass to plugin run")
 @click.option("--description", default="", help="Description for new plugin")
 @click.option("--source",      default="", help="URL or GitHub user/repo for install")
-@requires_network
 def plugin_cmd(action, name, target, description, source):
     """🔌  Plugin system — create, list, run, and install custom omega modules."""
     from omega_cli.modules import plugin as pl
@@ -888,7 +790,6 @@ def plugin_cmd(action, name, target, description, source):
               show_default=True, help="baseline=record scan | detect=find anomalies | status=show baseline")
 @click.option("--json-file", default="", help="Path to recon JSON")
 @click.option("--threshold", default=2.0, show_default=True, help="Z-score anomaly threshold")
-@requires_network
 def ml_cmd(target, action, json_file, threshold):
     """🤖  ML anomaly detection — baseline target, detect deviations across scans."""
     from omega_cli.modules import mldetect
@@ -901,7 +802,6 @@ def ml_cmd(target, action, json_file, threshold):
 @click.option("--api-key",   default="",          envvar="OPENAI_API_KEY", help="OpenAI API key")
 @click.option("--model",     default="gpt-3.5-turbo", show_default=True,  help="OpenAI model")
 @click.option("--no-ai",     is_flag=True,        help="Skip AI narrative, show risk table only")
-@requires_network
 def executive(target, json_file, api_key, model, no_ai):
     """📋  Executive report — AI narrative + per-finding risk ratings + remediation plan."""
     from omega_cli.modules import executive as ex
@@ -915,7 +815,6 @@ def executive(target, json_file, api_key, model, no_ai):
 @cli.command("live")
 @click.argument("target")
 @click.option("--duration", default=120, show_default=True, help="Dashboard run time in seconds")
-@requires_network
 def live_cmd(target, duration):
     """⚡  Live dashboard — full-screen multi-panel TUI with simultaneous module outputs."""
     from omega_cli.modules import livedash
@@ -929,7 +828,6 @@ def live_cmd(target, duration):
 @click.option("--passive",    is_flag=True, default=True, show_default=True,
               help="Passive-only (skip port scan and active probing)")
 @click.option("--output-dir", default="", help="Directory for output files")
-@requires_network
 def dossier(target, passive, output_dir):
     """🗂  Full OSINT dossier — structured intelligence profile: DNS+SSL+subdomains+tech+ASN+PDF."""
     from omega_cli.modules import dossier as ds
@@ -939,7 +837,6 @@ def dossier(target, passive, output_dir):
 @cli.command("network")
 @click.argument("target")
 @click.option("--no-trace", is_flag=True, help="Skip traceroute")
-@requires_network
 def network_cmd(target, no_trace):
     """🌐  Network topology — traceroute, BGP/ASN, CDN/WAF fingerprint, DNS propagation."""
     from omega_cli.modules import network as nw
@@ -952,7 +849,6 @@ def network_cmd(target, no_trace):
 @click.option("--scan-type", default="auto",
               type=click.Choice(["auto", "github", "npm", "pypi", "docker"]),
               show_default=True, help="Source to scan")
-@requires_network
 def secrets_cmd(target, token, scan_type):
     """🔑  Secret scanner — GitHub commits, npm, PyPI, Docker Hub for exposed credentials."""
     from omega_cli.modules import secrets as sc
@@ -969,7 +865,6 @@ def secrets_cmd(target, token, scan_type):
 @click.option("--interval", default=3600,            show_default=True, help="Check interval (seconds)")
 @click.option("--chain",    default="quick-recon",   show_default=True, help="Chain to run on each check")
 @click.option("--webhook",  default="",              help="Webhook URL for change alerts")
-@requires_network
 def watcher_cmd(action, target, interval, chain, webhook):
     """👁  Persistent watcher — cron daemon that re-runs chains and alerts on changes."""
     from omega_cli.modules import watcher as wt
@@ -982,7 +877,6 @@ def watcher_cmd(action, target, interval, chain, webhook):
 @click.option("--format",    default="tree",
               type=click.Choice(["tree", "ascii", "both"]),
               show_default=True, help="Output format")
-@requires_network
 def viz_cmd(target, json_file, format):
     """📊  Attack surface visualizer — Rich tree + ASCII topology graph of all findings."""
     from omega_cli.modules import viz as vz
@@ -993,7 +887,6 @@ def viz_cmd(target, json_file, format):
 @click.argument("target")
 @click.option("--json-file",  default="", help="Path to recon JSON")
 @click.option("--gen-script", is_flag=True, help="Output Metasploit .rc script")
-@requires_network
 def redteam_cmd(target, json_file, gen_script):
     """🔴  Red team surface — CVE→exploit mapping, port attack vectors, MSF module suggestions."""
     from omega_cli.modules import redteam as rt
@@ -1008,7 +901,6 @@ def redteam_cmd(target, json_file, gen_script):
               type=click.Choice(["auto", "npm", "pypi"]),
               show_default=True, help="Package ecosystem")
 @click.option("--no-typos", is_flag=True, help="Skip typosquat checks")
-@requires_network
 def supply_cmd(target, ecosystem, no_typos):
     """⛓  Supply chain — dependency tree, OSV vulns, typosquatted packages."""
     from omega_cli.modules import supply as sc
@@ -1019,7 +911,6 @@ def supply_cmd(target, ecosystem, no_typos):
 @click.argument("target")
 @click.option("--deep", is_flag=True, help="Check all 50+ platforms (slower)")
 @click.option("--email-pivot", is_flag=True, help="Derive usernames from email and check all variants")
-@requires_network
 def identity_cmd(target, deep, email_pivot):
     """🪪  Identity correlation — cross-platform username/email presence across 50+ sites."""
     from omega_cli.modules import identity as id_mod
@@ -1034,7 +925,6 @@ def identity_cmd(target, deep, email_pivot):
 @click.option("--intelx-key",     default="", envvar="INTELX_API_KEY",    help="IntelligenceX API key")
 @click.option("--dehashed-email", default="", help="Dehashed account email")
 @click.option("--dehashed-key",   default="", envvar="DEHASHED_API_KEY",  help="Dehashed API key")
-@requires_network
 def leaked_cmd(target, check_password, hibp_key, github_token, intelx_key, dehashed_email, dehashed_key):
     """💧  Leaked data — HIBP breaches, paste search, GitHub leaks, IntelX, Dehashed."""
     from omega_cli.modules import leaked as lk
@@ -1072,7 +962,6 @@ def deception_cmd(action, label, canary_type, domain, port, token_id):
 @click.argument("target")
 @click.option("--no-cdn", is_flag=True, help="Skip CDN/WAF fingerprinting")
 @click.option("--deep",   is_flag=True, help="Include subdomain pivot")
-@requires_network
 def infra_cmd(target, no_cdn, deep):
     """🏗  Infrastructure archaeology — IP history, WHOIS, CDN/WAF, cloud provider, shared hosting."""
     from omega_cli.modules import infra as inf
@@ -1084,7 +973,6 @@ def infra_cmd(target, no_cdn, deep):
 @click.option("--json-file", default="",  help="Specific JSON file to include")
 @click.option("--output",    default="",  help="Output HTML file path")
 @click.option("--open",      "open_browser", is_flag=True, help="Open report in browser after generation")
-@requires_network
 def report_cmd(target, json_file, output, open_browser):
     """📊  Interactive HTML report — D3.js force graph + full findings dashboard."""
     from omega_cli.modules import reporthtml as rh
@@ -1097,7 +985,6 @@ def report_cmd(target, json_file, output, open_browser):
 @click.argument("target")
 @click.option("--apk",          default="",  help="Path to local APK file for static analysis")
 @click.option("--no-store",     is_flag=True, help="Skip app store lookup")
-@requires_network
 def mobile_cmd(target, apk, no_store):
     """📱  Mobile OSINT — APK static analysis, permissions, trackers, hardcoded secrets, app store."""
     from omega_cli.modules import mobile as mob
@@ -1109,7 +996,6 @@ def mobile_cmd(target, apk, no_store):
 @click.option("--mode", default="auto",
               type=click.Choice(["auto", "aircraft_icao", "aircraft_callsign", "vessel_mmsi", "callsign"]),
               show_default=True, help="Query type override")
-@requires_network
 def satellite_cmd(target, mode):
     """🛰  Satellite/radio OSINT — ADS-B aircraft, AIS vessels, amateur radio callsign lookup."""
     from omega_cli.modules import satellite as sat
@@ -1127,7 +1013,6 @@ def satellite_cmd(target, mode):
               type=click.Choice(["general", "threat", "executive", "remediation", "recon"]),
               show_default=True, help="Analysis focus")
 @click.option("--ollama-host",  default="http://localhost:11434", show_default=True)
-@allows_ollama
 def aiassist_cmd(target, json_file, provider, model, focus, ollama_host):
     """🤖  AI analyst — feed recon data to GPT/Ollama for threat narrative + next steps."""
     from omega_cli.modules import aiassist as ai
@@ -1138,7 +1023,6 @@ def aiassist_cmd(target, json_file, provider, model, focus, ollama_host):
 @click.argument("target")
 @click.option("--depth",     default=2,  show_default=True, help="Pivot depth (1-3)")
 @click.option("--max-nodes", default=50, show_default=True, help="Max nodes to explore")
-@requires_network
 def pivot_cmd(target, depth, max_nodes):
     """🔗  IOC pivot engine — expand any IP/domain/hash/email to all related observables."""
     from omega_cli.modules import pivot as pv
@@ -1151,7 +1035,6 @@ def pivot_cmd(target, depth, max_nodes):
 @click.option("--snapshots",  is_flag=True, help="Show full snapshot history")
 @click.option("--diff",       is_flag=True, help="Diff oldest vs newest snapshot")
 @click.option("--interesting",is_flag=True, help="Show only interesting URLs")
-@requires_network
 def archive_cmd(target, limit, snapshots, diff, interesting):
     """🗄  Deep archive mining — Wayback CDX, CommonCrawl, interesting URL extraction."""
     from omega_cli.modules import archive as ar
@@ -1162,7 +1045,6 @@ def archive_cmd(target, limit, snapshots, diff, interesting):
 @click.argument("target")
 @click.option("--domain",      default="",  help="Primary domain for DNS inference")
 @click.option("--github-org",  default="",  help="GitHub org slug override")
-@requires_network
 def org_cmd(target, domain, github_org):
     """🏢  Organization OSINT — GitHub org, Crunchbase, job postings → tech stack inference."""
     from omega_cli.modules import org as og
@@ -1175,7 +1057,6 @@ def org_cmd(target, domain, github_org):
 @click.argument("target")
 @click.option("--ticker",  default="",   help="Stock ticker override (e.g. AAPL)")
 @click.option("--deep",    is_flag=True, help="Deep mode: insider trades + funding rounds")
-@requires_network
 def finance_cmd(target, ticker, deep):
     """💰  Financial OSINT — SEC EDGAR, OpenCorporates, Crunchbase, insider trading."""
     from omega_cli.modules import finance as fn
@@ -1186,7 +1067,6 @@ def finance_cmd(target, ticker, deep):
 @click.argument("query")
 @click.option("--check-onion",     default="",  help="Check if a specific .onion URL is live")
 @click.option("--monitor-domain",  default="",  help="Check ransomware group victim lists for domain")
-@requires_network
 def deepweb_cmd(query, check_onion, monitor_domain):
     """🧅  Deep/dark web recon — ransomware feeds, Ahmia, LeakIX, onion availability."""
     from omega_cli.modules import deepweb as dw
@@ -1219,7 +1099,6 @@ def osintdb_cmd(action, query, target, ioc_type, fmt, json_file):
               type=click.Choice(["white", "green", "amber", "red"]),
               show_default=True, help="TLP marking level")
 @click.option("--no-indicators", is_flag=True, help="Omit indicator objects (observables only)")
-@requires_network
 def stix_cmd(target, json_file, output, tlp, no_indicators):
     """📦  STIX 2.1 export — convert omega findings to threat intel bundle (MISP/OpenCTI/TheHive)."""
     from omega_cli.modules import stix as sx
@@ -1234,7 +1113,6 @@ def stix_cmd(target, json_file, output, tlp, no_indicators):
               show_default=True, help="Device type for default cred lookup")
 @click.option("--api-key", default="", envvar="SHODAN_API_KEY", help="Shodan API key")
 @click.option("--query",   default="", help="Custom Shodan search query")
-@requires_network
 def firmware_cmd(target, device_type, api_key, query):
     """📡  Firmware/IoT OSINT — Shodan device search, default creds DB, CVE mapping."""
     from omega_cli.modules import firmware as fw
@@ -1248,7 +1126,6 @@ def firmware_cmd(target, device_type, api_key, query):
 @click.option("--output",    default="", help="Output HTML file path")
 @click.option("--open",      "open_browser", is_flag=True, help="Open in browser after generation")
 @click.option("--json-file", default="", help="Load from a specific JSON file")
-@requires_network
 def timeline3d_cmd(target, output, open_browser, json_file):
     """⏱  3D intelligence timeline — interactive D3.js chronological event graph."""
     from omega_cli.modules import timeline3d as t3
@@ -1261,7 +1138,6 @@ def timeline3d_cmd(target, output, open_browser, json_file):
 @click.argument("target")
 @click.option("--json-file",    default="", help="Specific JSON file to analyse")
 @click.option("--report-dir",   default="", help="Directory of omega JSON reports")
-@requires_network
 def riskcore_cmd(target, json_file, report_dir):
     """🎯  Risk scoring engine — weighted CVSS-like risk matrix from all omega findings."""
     from omega_cli.modules import riskcore as rc
@@ -1272,7 +1148,6 @@ def riskcore_cmd(target, json_file, report_dir):
 @click.argument("target")
 @click.option("--no-live",       is_flag=True, help="Skip live DNS tunnel checks")
 @click.option("--no-subdomains", is_flag=True, help="Skip passive DNS subdomain fetch")
-@requires_network
 def exfil_cmd(target, no_live, no_subdomains):
     """🕵  Exfiltration & C2 detection — DNS tunnel entropy, DGA detection, URLhaus check."""
     from omega_cli.modules import exfil as ex
@@ -1287,7 +1162,6 @@ def exfil_cmd(target, no_live, no_subdomains):
 @click.option("--country", default="",      help="Country code (US, GB, DE, CA, AU, NL, FR, SE)")
 @click.option("--count",   default=1,       show_default=True, help="Number of personas to generate")
 @click.option("--export",  is_flag=True,    help="Save to ~/.omega/reports/")
-@requires_network
 def persona_cmd(seed, gender, country, count, export):
     """🎭  OpSec persona builder — generate realistic fictitious identity for red team / OSINT."""
     from omega_cli.modules import persona as pe
@@ -1300,7 +1174,6 @@ def persona_cmd(seed, gender, country, count, export):
 @click.option("--deep",          is_flag=True, help="Extended bucket permutation list + metadata endpoints")
 @click.option("--github-token",  default="", envvar="GITHUB_TOKEN", help="GitHub PAT")
 @click.option("--skip-buckets",  is_flag=True, help="Skip cloud storage enumeration")
-@requires_network
 def cloud2_cmd(target, deep, github_token, skip_buckets):
     """☁  Deep cloud recon — S3/GCS/Azure blob enum, GitHub Actions workflows, cloud detection."""
     from omega_cli.modules import cloud2 as cl
@@ -1312,7 +1185,6 @@ def cloud2_cmd(target, deep, github_token, skip_buckets):
 @click.option("--token",  default="", envvar="GITHUB_TOKEN", help="GitHub PAT")
 @click.option("--repo",   default="",  help="Specific repo to analyse (default: most-starred)")
 @click.option("--deep",   is_flag=True, help="Fetch 100 commits instead of 50")
-@requires_network
 def codetrace_cmd(target, token, repo, deep):
     """🔍  Code attribution — commit timezone analysis, language fingerprint, geography inference."""
     from omega_cli.modules import codetrace as ct
@@ -1327,7 +1199,6 @@ def codetrace_cmd(target, token, repo, deep):
 @click.option("--query",  default="", help="IOC to search across feeds")
 @click.option("--limit",  default=20, show_default=True, help="Results per feed")
 @click.option("--export", default="", help="Export results to JSON file path")
-@requires_network
 def threatfeed_cmd(action, feed, query, limit, export):
     """📡  Threat feed manager — Feodo C2, URLhaus, ThreatFox, SSLBL, MalwareBazaar."""
     from omega_cli.modules import threatfeed as tf
@@ -1340,7 +1211,6 @@ def threatfeed_cmd(action, feed, query, limit, export):
 @click.argument("number")
 @click.option("--api-key",      default="", envvar="NUMVERIFY_API_KEY", help="NumVerify API key")
 @click.option("--abstract-key", default="", envvar="ABSTRACT_API_KEY",  help="Abstract phone API key")
-@requires_network
 def phoneosint_cmd(number, api_key, abstract_key):
     """📞  Phone OSINT — carrier, line type, region, CNAM caller ID, spam score."""
     from omega_cli.modules import phoneosint as ph
@@ -1350,7 +1220,6 @@ def phoneosint_cmd(number, api_key, abstract_key):
 @cli.command("imgosint")
 @click.argument("image_path")
 @click.option("--raw", is_flag=True, help="Show all raw EXIF tags")
-@requires_network
 def imgosint_cmd(image_path, raw):
     """🖼  Image OSINT — EXIF metadata, GPS extraction, reverse search links, steganography hints."""
     from omega_cli.modules import imgosint as ig
@@ -1361,7 +1230,6 @@ def imgosint_cmd(image_path, raw):
 @click.argument("file_path")
 @click.option("--no-urls",    is_flag=True, help="Skip embedded URL extraction")
 @click.option("--no-secrets", is_flag=True, help="Skip secret pattern scan")
-@requires_network
 def docosint_cmd(file_path, no_urls, no_secrets):
     """📄  Document OSINT — PDF/Office metadata, author, embedded URLs, secrets, revision history."""
     from omega_cli.modules import docosint as dc
@@ -1373,7 +1241,6 @@ def docosint_cmd(file_path, no_urls, no_secrets):
 @click.option("--min-modules", default=2, show_default=True, help="Min modules an IOC must appear in")
 @click.option("--graph",       is_flag=True, help="Show Rich tree graph of correlations")
 @click.option("--report-dir",  default="", help="Directory of omega JSON reports")
-@requires_network
 def autocorr_cmd(target, min_modules, graph, report_dir):
     """🔗  Auto-correlation — cross-reference all omega findings, surface shared IOCs across modules."""
     from omega_cli.modules import autocorr as ac
@@ -1402,7 +1269,6 @@ def briefing_cmd(target, hours, fmt, output, open_browser, report_dir):
 @click.option("--github-token", default="", envvar="GITHUB_TOKEN",   help="GitHub PAT for PoC search")
 @click.option("--no-kev",       is_flag=True, help="Skip CISA KEV check")
 @click.option("--no-epss",      is_flag=True, help="Skip EPSS exploit probability")
-@requires_network
 def vuln2_cmd(target, api_key, github_token, no_kev, no_epss):
     """🔴  Advanced vuln intel — NVD CPE search, EPSS exploit probability, CISA KEV, PoC finder."""
     from omega_cli.modules import vuln2 as v2
@@ -1418,7 +1284,6 @@ def vuln2_cmd(target, api_key, github_token, no_kev, no_epss):
 @click.option("--max-pages",   default=30, show_default=True, help="Max pages to crawl")
 @click.option("--no-secrets",  is_flag=True, help="Skip secret pattern scan")
 @click.option("--export",      default="", help="Export JSON to path")
-@requires_network
 def webcrawl_cmd(target, depth, max_pages, no_secrets, export):
     """🕷  Smart web crawler — forms, JS endpoints, comments, robots/sitemap, secret detection."""
     from omega_cli.modules import webcrawl as wc
@@ -1429,7 +1294,6 @@ def webcrawl_cmd(target, depth, max_pages, no_secrets, export):
 @click.argument("target")
 @click.option("--api-key", default="", envvar="ABUSEIPDB_KEY", help="AbuseIPDB API key")
 @click.option("--export",  default="", help="Export JSON to path")
-@requires_network
 def ipdossier_cmd(target, api_key, export):
     """🌐  IP dossier — PTR, ASN, BGP peers, Shodan, abuse contacts, 8-DNSBL blacklist check."""
     from omega_cli.modules import ipdossier as ipd
@@ -1440,7 +1304,6 @@ def ipdossier_cmd(target, api_key, export):
 @click.argument("target")
 @click.option("--deep",   is_flag=True, help="Deep JS source mining")
 @click.option("--export", default="", help="Export JSON to path")
-@requires_network
 def apiosint_cmd(target, deep, export):
     """⚙  API OSINT — Swagger/OpenAPI discovery, GraphQL introspection, REST endpoint finder."""
     from omega_cli.modules import apiosint as api
@@ -1452,7 +1315,6 @@ def apiosint_cmd(target, deep, export):
 @click.option("--email",  default="", help="Email address for breach checks")
 @click.option("--deep",   is_flag=True, help="Deep profile scraping")
 @click.option("--export", default="", help="Export JSON to path")
-@requires_network
 def socmint_cmd(username, email, deep, export):
     """👤  Social OSINT — 25-platform username search, GitHub/Reddit/HN profile aggregation."""
     from omega_cli.modules import socmint as sm
@@ -1464,7 +1326,6 @@ def socmint_cmd(username, email, deep, export):
 @click.option("--chain",   default="auto", type=click.Choice(["auto","btc","eth"]), show_default=True)
 @click.option("--api-key", default="", envvar="ETHERSCAN_API_KEY", help="Etherscan API key")
 @click.option("--export",  default="", help="Export JSON to path")
-@requires_network
 def cryptoosint_cmd(address, chain, api_key, export):
     """₿  Blockchain OSINT — BTC/ETH tx history, mixing detection, sanctions, exchange ID."""
     from omega_cli.modules import cryptoosint as co
@@ -1478,7 +1339,6 @@ def cryptoosint_cmd(address, chain, api_key, export):
 @click.option("--output",     default="",  help="Output base path (no extension)")
 @click.option("--open",       "open_browser", is_flag=True, help="Open HTML report in browser")
 @click.option("--report-dir", default="",  help="Directory of omega JSON reports")
-@requires_network
 def reportgen_cmd(target, hours, fmt, output, open_browser, report_dir):
     """📊  Master report — aggregate ALL omega findings into a professional HTML/Markdown/PDF report."""
     from omega_cli.modules import reportgen as rg
@@ -1494,7 +1354,6 @@ def reportgen_cmd(target, hours, fmt, output, open_browser, report_dir):
 @click.option("--openai-key",   default="",        envvar="OPENAI_API_KEY", help="OpenAI API key fallback")
 @click.option("--report-dir",   default="",        help="Directory of omega JSON reports")
 @click.option("--export",       default="",        help="Export JSON to path")
-@allows_ollama
 def aisummary_cmd(target, hours, ollama_model, openai_key, report_dir, export):
     """🤖  AI findings summarizer — Ollama (local) or OpenAI to generate threat intel brief from all omega findings."""
     from omega_cli.modules import aisummary as ai
@@ -1507,7 +1366,6 @@ def aisummary_cmd(target, hours, ollama_model, openai_key, report_dir, export):
 @click.option("--heatmap",    is_flag=True, help="Generate ATT&CK heatmap HTML")
 @click.option("--report-dir", default="",  help="Directory of omega JSON reports")
 @click.option("--export",     default="",  help="Export JSON to path")
-@requires_network
 def attackmap_cmd(target, heatmap, report_dir, export):
     """⚔  MITRE ATT&CK mapper — map omega findings to ATT&CK techniques and tactics."""
     from omega_cli.modules import attackmap as am
@@ -1520,7 +1378,6 @@ def attackmap_cmd(target, heatmap, report_dir, export):
 @click.option("--threads",     default=50,  show_default=True, help="Concurrent threads")
 @click.option("--no-axfr",     is_flag=True, help="Skip zone transfer attempt")
 @click.option("--export",      default="",  help="Export JSON to path")
-@requires_network
 def dnsbrute_cmd(domain, wordlist, threads, no_axfr, export):
     """💥  DNS bruteforce — subdomain enum with wildcard detection and zone transfer attempt."""
     from omega_cli.modules import dnsbrute as db
@@ -1532,7 +1389,6 @@ def dnsbrute_cmd(domain, wordlist, threads, no_axfr, export):
 @click.option("--github-token", default="", envvar="GITHUB_TOKEN", help="GitHub PAT for higher API limits")
 @click.option("--deep",         is_flag=True, help="Fetch pastes and check for sensitive content")
 @click.option("--export",       default="",  help="Export JSON to path")
-@requires_network
 def pastewatch_cmd(target, github_token, deep, export):
     """📋  Paste watcher — search GitHub Gists, pastebin, grep.app for target data leaks."""
     from omega_cli.modules import pastewatch as pw
@@ -1545,7 +1401,6 @@ def pastewatch_cmd(target, github_token, deep, export):
 @click.option("--no-relay",    is_flag=True, help="Skip Tor exit node check")
 @click.option("--no-darknet",  is_flag=True, help="Skip Ahmia darknet search")
 @click.option("--export",      default="",   help="Export JSON to path")
-@requires_network
 def torcheck_cmd(target, probe, no_relay, no_darknet, export):
     """🧅  Tor intelligence — exit node check, .onion probe, Onionoo relay lookup, Ahmia darknet search."""
     from omega_cli.modules import torcheck as tc
@@ -1559,7 +1414,6 @@ def torcheck_cmd(target, probe, no_relay, no_darknet, export):
 @click.option("--top",     default=0,   show_default=True, help="Show only top N results (0=all)")
 @click.option("--api-key", default="",  envvar="NVD_API_KEY", help="NVD API key (higher rate limit)")
 @click.option("--export",  default="",  help="Export JSON to path")
-@requires_network
 def cvssrank_cmd(cves, file, top, api_key, export):
     """📊  Bulk CVE ranker — rank by CVSS + EPSS exploit probability + CISA KEV for triage prioritization."""
     from omega_cli.modules import cvssrank as cr
@@ -1571,7 +1425,6 @@ def cvssrank_cmd(cves, file, top, api_key, export):
 @cli.command("agent")
 @click.argument("agent_name")
 @click.argument("target")
-@requires_network
 def agent_cmd(agent_name, target):
     """🤖  Run a single specialist agent on a target."""
     from omega_cli.agents.manager import AgentManager
@@ -1581,7 +1434,6 @@ def agent_cmd(agent_name, target):
 
 
 @cli.command("agents")
-@requires_network
 def agents_list_cmd():
     """📋  List all available AI agents and their capabilities."""
     from omega_cli.agents.manager import AgentManager
@@ -1603,7 +1455,6 @@ def agents_list_cmd():
 @cli.command("autopilot")
 @click.argument("target")
 @click.option("--task", default="recon", help="Task type: recon, bug-bounty, pentest, osint, threat-hunt")
-@requires_network
 def autopilot_cmd(target, task):
     """🧠  AI Autopilot — multi-agent autonomous workflow on a target."""
     from omega_cli.agents.manager import AgentManager
@@ -1617,7 +1468,6 @@ def autopilot_cmd(target, task):
 @click.option("--search", default="", help="Search findings")
 @click.option("--clear", is_flag=True, help="Clear all memory")
 @click.option("--stats", "show_stats", is_flag=True, help="Show memory statistics")
-@requires_network
 def memory_cmd(target, search, clear, show_stats):
     """🧠  Agent memory — view stored findings and run history."""
     from omega_cli.agents.memory import AgentMemory
@@ -1665,7 +1515,6 @@ def memory_cmd(target, search, clear, show_stats):
 @click.option("--phases", default="", help="Comma-separated phases: recon,enumerate,vuln,exploit,surface,report (default: all)")
 @click.option("--model", default="llama3", help="Ollama model for AI decisions.")
 @click.option("--output", default="", help="Output directory for reports.")
-@requires_network
 def hexstrike_cmd(target, confirm, phases, model, output):
     """⚔  HexStrike AI — autonomous offensive security framework."""
     from omega_cli.modules.hexstrike import run as hs_run
@@ -1675,7 +1524,6 @@ def hexstrike_cmd(target, confirm, phases, model, output):
 
 @cli.command("hexplan")
 @click.argument("target")
-@requires_network
 def hexplan_cmd(target):
     """⚔  HexStrike AI — preview attack plan without executing."""
     from omega_cli.modules.hexstrike import plan as hs_plan
@@ -1692,7 +1540,6 @@ def hexreport_cmd(target, output):
 
 
 @cli.command("chat")
-@allows_ollama
 def chat_cmd():
     """🤖  Interactive AI chat — ask questions, run tools via natural language."""
     from omega_cli.agents.manager import AgentManager
