@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +31,9 @@ jobs:
         run: |
           omega --version
           omega --help
+
+      - name: Run import test
+        run: python -c "from omega_cli.main import cli; from omega_cli.agents import BaseAgent, AgentMemory, ToolExecutor; print('OK')"
 
       - name: Smoke test — persona (no network)
         run: omega persona --count 1
