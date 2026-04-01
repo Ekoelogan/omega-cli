@@ -77,3 +77,8 @@ def run(target: str, ports: str = "common"):
         console.print("[yellow]No open ports found.[/yellow]")
 
     console.print(f"\n[bold]Scanned {len(port_map)} ports, {len(open_ports)} open.[/bold]")
+    return {
+        "ports": [{"port": p, "service": s} for p, s in open_ports],
+        "open_count": len(open_ports),
+        "scanned": len(port_map),
+    }

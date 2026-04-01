@@ -37,8 +37,8 @@ BANNER = "[bold #ff2d78]OMEGA-CLI[/bold #ff2d78] [dim]v1.8.0[/dim]"
 @click.pass_context
 def cli(ctx):
     """omega — OSINT and passive recon toolkit."""
-    print_banner()
     if ctx.invoked_subcommand is None:
+        print_banner()
         click.echo(ctx.get_help())
 
 
@@ -1417,6 +1417,93 @@ def cvssrank_cmd(cves, file, top, api_key, export):
     """📊  Bulk CVE ranker — rank by CVSS + EPSS exploit probability + CISA KEV for triage prioritization."""
     from omega_cli.modules import cvssrank as cr
     cr.run(cves, api_key=api_key, file=file, top=top, export=export)
+
+
+# ── AI Agent Framework ────────────────────────────────────────────────────────
+
+@cli.command("agent")
+@click.argument("agent_name")
+@click.argument("target")
+def agent_cmd(agent_name, target):
+    """🤖  Run a single specialist agent on a target."""
+    from omega_cli.agents.manager import AgentManager
+    from omega_cli.config import load
+    mgr = AgentManager(config=load())
+    mgr.run_agent(agent_name, target)
+
+
+@cli.command("agents")
+def agents_list_cmd():
+    """📋  List all available AI agents and their capabilities."""
+    from omega_cli.agents.manager import AgentManager
+    from omega_cli.config import load
+    from rich.table import Table
+    mgr = AgentManager(config=load())
+    agents = mgr.list_agents()
+    tbl = Table(title="OMEGA AI Agents", border_style="#ff85b3")
+    tbl.add_column("Agent", style="bold #ff2d78")
+    tbl.add_column("Category", style="yellow")
+    tbl.add_column("Description", style="dim")
+    tbl.add_column("Tools", style="cyan")
+    for a in agents:
+        tbl.add_row(a["name"], a["category"], a["description"],
+                     ", ".join(a["tools"][:5]))
+    console.print(tbl)
+
+
+@cli.command("autopilot")
+@click.argument("target")
+@click.option("--task", default="recon", help="Task type: recon, bug-bounty, pentest, osint, threat-hunt")
+def autopilot_cmd(target, task):
+    """🧠  AI Autopilot — multi-agent autonomous workflow on a target."""
+    from omega_cli.agents.manager import AgentManager
+    from omega_cli.config import load
+    mgr = AgentManager(config=load())
+    mgr.run_task(task, target)
+
+
+@cli.command("memory")
+@click.option("--target", default="", help="Filter by target")
+@click.option("--search", default="", help="Search findings")
+@click.option("--clear", is_flag=True, help="Clear all memory")
+@click.option("--stats", "show_stats", is_flag=True, help="Show memory statistics")
+def memory_cmd(target, search, clear, show_stats):
+    """🧠  Agent memory — view stored findings and run history."""
+    from omega_cli.agents.memory import AgentMemory
+    from rich.table import Table
+    mem = AgentMemory()
+    if clear:
+        mem.clear(target=target)
+        console.print("[green]✓[/] Memory cleared.")
+        return
+    if show_stats:
+        stats = mem.stats()
+        console.print(f"[bold]Targets:[/] {stats['targets']}  "
+                       f"[bold]Findings:[/] {stats['findings']}  "
+                       f"[bold]Runs:[/] {stats['runs']}")
+        for sev, count in stats.get("by_severity", {}).items():
+            console.print(f"  {sev}: {count}")
+        return
+    if search:
+        results = mem.search(search)
+        for r in results:
+            console.print(f"  [{r.get('severity', 'info')}] {r['title']} ({r['agent']})")
+        return
+    findings = mem.get_findings(target=target, limit=50)
+    if not findings:
+        console.print("[dim]No findings in memory.[/]")
+        return
+    tbl = Table(title="Agent Findings", border_style="#ff85b3")
+    tbl.add_column("Severity", style="bold")
+    tbl.add_column("Title")
+    tbl.add_column("Agent", style="dim")
+    tbl.add_column("Target", style="cyan")
+    sev_styles = {"critical": "red bold", "high": "red", "medium": "yellow", "low": "cyan", "info": "dim"}
+    for f in findings:
+        sev = f.get("severity", "info")
+        tbl.add_row(f"[{sev_styles.get(sev, 'dim')}]{sev.upper()}[/]",
+                     f["title"], f.get("agent", ""), f.get("target", ""))
+    console.print(tbl)
 
 
 if __name__ == "__main__":

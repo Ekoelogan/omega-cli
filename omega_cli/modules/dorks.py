@@ -39,3 +39,13 @@ def run(target: str, dork: str = "all"):
         table.add_row(name, query, link)
 
     console.print(table)
+
+    dorks = {}
+    for name, template in templates.items():
+        query = template.replace("{target}", target)
+        encoded = query.replace(" ", "+")
+        dorks[name] = {
+            "query": query,
+            "url": f"https://www.google.com/search?q={encoded}",
+        }
+    return dorks

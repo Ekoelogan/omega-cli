@@ -19,9 +19,12 @@ def run(target: str, record_type: str = "ALL"):
     resolver.timeout = 3
     resolver.lifetime = 5
 
+    results = {}
     for rtype in types:
         try:
             answers = resolver.resolve(target, rtype)
+            records = [str(rdata) for rdata in answers]
+            results[rtype] = records
             table = Table(title=f"{rtype} Records", show_header=False, box=None, padding=(0, 2))
             table.add_column("Value", style="green")
             for rdata in answers:
@@ -31,3 +34,5 @@ def run(target: str, record_type: str = "ALL"):
             pass
         except Exception:
             pass
+
+    return results

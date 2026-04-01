@@ -11,6 +11,20 @@ omega_cli.egg-info/dependency_links.txt
 omega_cli.egg-info/entry_points.txt
 omega_cli.egg-info/requires.txt
 omega_cli.egg-info/top_level.txt
+omega_cli/agents/__init__.py
+omega_cli/agents/base_agent.py
+omega_cli/agents/executor.py
+omega_cli/agents/manager.py
+omega_cli/agents/memory.py
+omega_cli/agents/planner.py
+omega_cli/agents/router.py
+omega_cli/agents/specialists/__init__.py
+omega_cli/agents/specialists/cloud_agent.py
+omega_cli/agents/specialists/recon_agent.py
+omega_cli/agents/specialists/report_agent.py
+omega_cli/agents/specialists/social_agent.py
+omega_cli/agents/specialists/vuln_agent.py
+omega_cli/agents/specialists/web_agent.py
 omega_cli/modules/__init__.py
 omega_cli/modules/ai_analyst.py
 omega_cli/modules/aiassist.py
@@ -27,6 +41,7 @@ omega_cli/modules/breachcheck.py
 omega_cli/modules/briefing.py
 omega_cli/modules/buckets.py
 omega_cli/modules/c2.py
+omega_cli/modules/certhunt.py
 omega_cli/modules/chain.py
 omega_cli/modules/cloud2.py
 omega_cli/modules/cloudrecon.py
@@ -71,6 +86,7 @@ omega_cli/modules/ipinfo.py
 omega_cli/modules/jscan.py
 omega_cli/modules/leaked.py
 omega_cli/modules/livedash.py
+omega_cli/modules/mailsec.py
 omega_cli/modules/malware.py
 omega_cli/modules/mldetect.py
 omega_cli/modules/mobile.py

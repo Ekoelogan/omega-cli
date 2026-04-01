@@ -97,3 +97,10 @@ def run(username: str):
         for platform, _ in not_found:
             nf_table.add_row(platform)
         console.print(nf_table)
+
+    return {
+        "username": username,
+        "found": [{"platform": p, "url": u} for p, u in found],
+        "not_found": [p for p, _ in not_found],
+        "found_count": len(found),
+    }

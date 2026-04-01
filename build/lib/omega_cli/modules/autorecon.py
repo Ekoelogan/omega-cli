@@ -222,4 +222,10 @@ def _summarize(key: str, data: dict) -> str:
     if key == "cvemap":
         cves = data.get("cves", [])
         return f"{len(cves)} CVEs mapped" if cves else ""
-    return str(list(data.values())[0])[:80] if data else ""
+    if not data:
+        return ""
+    if isinstance(data, dict):
+        return str(list(data.values())[0])[:80]
+    if isinstance(data, list):
+        return str(data[0])[:80] if data else ""
+    return str(data)[:80]

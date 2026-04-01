@@ -77,5 +77,18 @@ def run(target: str):
                 leak_t.add_row(h, v)
             console.print(leak_t)
 
+        # Return structured data
+        present = [h for h in SECURITY_HEADERS if h.lower() in [k.lower() for k in r.headers]]
+        missing = [h for h in SECURITY_HEADERS if h.lower() not in [k.lower() for k in r.headers]]
+        return {
+            "url": str(r.url),
+            "status": r.status_code,
+            "headers": dict(r.headers),
+            "security_present": present,
+            "security_missing": missing,
+            "info_leaks": {h: v for h, v in leaks},
+        }
+
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
+        return {"error": str(e)}

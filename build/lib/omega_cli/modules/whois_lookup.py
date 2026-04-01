@@ -29,12 +29,18 @@ def run(target: str):
             "Status": w.status,
         }
 
+        result = {}
         for field, value in fields.items():
             if value:
                 if isinstance(value, list):
+                    result[field.lower().replace(" ", "_")] = [str(v) for v in value[:10]]
                     value = ", ".join(str(v) for v in value[:5])
+                else:
+                    result[field.lower().replace(" ", "_")] = str(value)
                 table.add_row(field, str(value))
 
         console.print(table)
+        return result
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
+        return {"error": str(e)}

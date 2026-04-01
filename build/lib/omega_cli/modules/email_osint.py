@@ -73,3 +73,9 @@ def run(target: str):
         "\n[dim]Note: Full email breach lookup requires a HaveIBeenPwned API key.[/dim]"
         "\n[dim]Set HIBP_API_KEY env var and re-run for per-address breach data.[/dim]"
     )
+    return {
+        "email": target,
+        "domain": domain,
+        "valid_format": valid_fmt,
+        "has_mx": has_mx,
+    }

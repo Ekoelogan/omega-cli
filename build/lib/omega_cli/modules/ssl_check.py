@@ -50,7 +50,23 @@ def run(target: str):
 
         console.print(table)
 
+        return {
+            "common_name": subject.get("commonName", ""),
+            "organization": subject.get("organizationName", ""),
+            "issuer_cn": issuer.get("commonName", ""),
+            "issuer_org": issuer.get("organizationName", ""),
+            "valid_from": str(not_before.date()),
+            "expires": str(not_after.date()),
+            "days_left": days_left,
+            "expired": days_left <= 0,
+            "protocol": version,
+            "cipher": cipher[0] if cipher else "",
+            "sans": sans,
+        }
+
     except ssl.SSLCertVerificationError as e:
         console.print(f"[red]SSL Verification Error:[/red] {e}")
+        return {"error": str(e), "expired": True}
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
+        return {"error": str(e)}

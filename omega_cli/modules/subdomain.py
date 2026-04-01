@@ -63,3 +63,4 @@ def run(target: str, wordlist: str = None):
             t.join()
 
     console.print(f"\n[bold]Found {len(found)} subdomain(s).[/bold]")
+    return {"subdomains": sorted(found), "count": len(found)}
