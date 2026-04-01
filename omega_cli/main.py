@@ -1657,6 +1657,40 @@ def memory_cmd(target, search, clear, show_stats):
     console.print(tbl)
 
 
+# ── HexStrike AI ─────────────────────────────────────────────────────────────
+
+@cli.command("hexstrike")
+@click.argument("target")
+@click.option("--confirm", is_flag=True, help="Confirm authorization to test this target.")
+@click.option("--phases", default="", help="Comma-separated phases: recon,enumerate,vuln,exploit,surface,report (default: all)")
+@click.option("--model", default="llama3", help="Ollama model for AI decisions.")
+@click.option("--output", default="", help="Output directory for reports.")
+@requires_network
+def hexstrike_cmd(target, confirm, phases, model, output):
+    """⚔  HexStrike AI — autonomous offensive security framework."""
+    from omega_cli.modules.hexstrike import run as hs_run
+    hs_run(target, confirm=confirm, phases=phases or None, ollama_model=model,
+           output_dir=output or "./hexstrike_reports")
+
+
+@cli.command("hexplan")
+@click.argument("target")
+@requires_network
+def hexplan_cmd(target):
+    """⚔  HexStrike AI — preview attack plan without executing."""
+    from omega_cli.modules.hexstrike import plan as hs_plan
+    hs_plan(target)
+
+
+@cli.command("hexreport")
+@click.argument("target")
+@click.option("--output", default="", help="Output path for report file.")
+def hexreport_cmd(target, output):
+    """⚔  HexStrike AI — generate pentest report from findings."""
+    from omega_cli.modules.hexstrike import report as hs_report
+    hs_report(target, output=output or "./hexstrike_reports")
+
+
 @cli.command("chat")
 @allows_ollama
 def chat_cmd():

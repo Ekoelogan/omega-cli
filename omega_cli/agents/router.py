@@ -80,6 +80,8 @@ class AgentRouter:
             return ["privacy-agent"]
         if any(kw in task_lower for kw in ["crypto", "blockchain", "bitcoin", "ethereum", "stego"]):
             return ["crypto-agent"]
+        if any(kw in task_lower for kw in ["hexstrike", "offensive", "attack surface", "autonomous pentest", "red team"]):
+            return ["hexstrike-agent"]
         if any(kw in task_lower for kw in ["ai", "machine learning", "ml model", "llm"]):
             return ["ai-security-agent"]
         if any(kw in task_lower for kw in ["report", "pdf", "summary"]):
@@ -110,6 +112,7 @@ class AgentRouter:
             ("privacy-agent", "omega_cli.agents.specialists.privacy_agent", "PrivacyAgent"),
             ("crypto-agent", "omega_cli.agents.specialists.crypto_agent", "CryptoAgent"),
             ("ai-security-agent", "omega_cli.agents.specialists.ai_security_agent", "AISecurityAgent"),
+            ("hexstrike-agent", "omega_cli.agents.specialists.hexstrike_agent", "HexStrikeAgent"),
         ]
         for name, module_path, class_name in _agents:
             try:
